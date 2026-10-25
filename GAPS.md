@@ -68,6 +68,9 @@ comment in the source. The absence is the gap.
 
 Run these yourself before teaching. Each command reproduces the gap.
 
+**Reseed first.** Several of these depend on the shipped seed data, which any
+approve or reject action overwrites. `npm run db:reset` restores it in one step.
+
 ### F3, overlapping requests both succeed
 
 ```

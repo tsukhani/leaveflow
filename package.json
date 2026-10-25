@@ -17,7 +17,7 @@
     "test:mutation": "stryker run",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma db push --force-reset && npm run db:seed",
+    "db:reset": "node scripts/reset-db.mjs",
     "db:studio": "prisma studio"
   },
   "dependencies": {

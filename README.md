@@ -70,6 +70,57 @@ npm run build
 npm run test:mutation  # 7.14 percent, 39 survivors. That is the lesson.
 ```
 
+## Reset the database
+
+The app writes to `prisma/dev.db`. After a lab where you approve, reject or
+submit something, the seed data is no longer pristine. Reset it in one command:
+
+```bash
+npm run db:reset
+```
+
+That deletes `prisma/dev.db`, recreates the schema from `prisma/schema.prisma`,
+and runs the seed. You should see:
+
+```
+removed prisma/dev.db
+
+$ npm run db:push
+$ npm run db:seed
+Seeded: { employees: 5, balances: 5, requests: 6 }
+
+Database reset. Expected state: 5 employees, 5 balances, 6 requests.
+```
+
+Run it at the start of every session. Several labs depend on the seeded state:
+Priya's two overlapping requests (gap F3) and Nadia's drifted balance (gap F4)
+only exist in a freshly seeded database.
+
+**Why not `prisma db push --force-reset`?** Prisma 7 requires interactive
+consent before any destructive command, so it cannot be scripted, run in CI, or
+called by an agent. `npm run db:reset` deletes the file directly, which works
+everywhere and is easier to audit. The script is `scripts/reset-db.mjs`, and it
+touches nothing outside `prisma/dev.db`.
+
+**If you want to inspect the data** rather than reset it:
+
+```bash
+npm run db:studio
+```
+
+Opens Prisma Studio at http://localhost:5555, with a table browser.
+
+**If you want to roll the whole thing back** to a fresh clone:
+
+```bash
+git clean -xdf && npm install
+cp .env.example .env
+npm run db:reset
+```
+
+`-x` removes ignored files, which includes `node_modules`, `.next`, `.env` and
+`prisma/dev.db`. Use it deliberately: it deletes all four.
+
 ## What you are looking at
 
 | Route                      | What it does                                               |
