@@ -52,6 +52,9 @@ Both are deliberate and both fail WCAG 2.2 AA, which `openspec/specs/leave-reque
 
 ## Process gaps
 
+These four are absences rather than defects, so you will not find a `GAP-Pn`
+comment in the source. The absence is the gap.
+
 | ID  | Gap                                      | Where                                        |
 | --- | ---------------------------------------- | -------------------------------------------- |
 | P1  | No CI workflow. Nothing runs on push     | `.github/workflows/` is intentionally absent |
