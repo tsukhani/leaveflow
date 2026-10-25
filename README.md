@@ -365,9 +365,33 @@ prisma/
   schema.prisma   data model, with gap notes in comments
   seed.ts         the six requests that make the gaps visible
 tests/            Vitest; partial by design
-openspec/         spec of record plus two incomplete change proposals
+openspec/
+  specs/          spec of record: how the system should behave
+  changes/        two incomplete proposals for Lab 1C
+backlog/
+  stories.md      20 mixed-quality stories for Lab 2A
+stories/
+  LF-05.md        local story export for Labs 3B and 3C
 GAPS.md           instructor answer key
 ```
+
+## How the labs use this repo
+
+Every lab acts on this codebase. The mapping is in [GAPS.md](GAPS.md), which
+lists which gaps each session draws on.
+
+| Lab    | Uses                                                                     |
+| ------ | ------------------------------------------------------------------------ |
+| 1A, 1B | The app as described in its brief, to write a PRD and stories            |
+| 1C     | `openspec/changes/`: two proposals, both incomplete                      |
+| 2A     | `backlog/stories.md`: 20 stories, mixed quality, on purpose              |
+| 2B     | The whole repo against `openspec/specs/`, with GAPS.md as the answer key |
+| 2C     | The gap register, turned into a two-sprint Jira plan                     |
+| 3A     | Writes `CLAUDE.md`, which does not exist here                            |
+| 3B, 3C | `stories/LF-05.md`, and the skill you write to implement it              |
+| 3D     | `/api/health` and the SQLite database behind it                          |
+| 3E     | Builds the hooks; `src/lib` and `prisma/` are the paths they guard       |
+| 3F     | The full chain, ending with LF-05 in review                              |
 
 ## License
 
