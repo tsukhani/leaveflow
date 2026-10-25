@@ -9,15 +9,197 @@ answer key. **If you are a participant, do not open GAPS.md until Day 2 closes.*
 
 ## Stack
 
-| Layer           | Choice                                           |
-| --------------- | ------------------------------------------------ |
-| Framework       | Next.js 16, App Router, React 19                 |
-| Language        | TypeScript 5.9, strict                           |
-| Styling         | Tailwind CSS 4                                   |
-| Data            | Prisma 7 with the better-sqlite3 driver adapter  |
-| Database        | SQLite, so the lab runs offline with no services |
-| Tests           | Vitest 5, Testing Library, Stryker for mutation  |
-| Lint and format | ESLint 9, Prettier 3                             |
+Every layer, what it does here, and why it was chosen. Versions are the ones
+pinned in `package.json`; run `npm ls --depth=0` to see what actually installed.
+
+### Runtime and toolchain
+
+| Component | Version           | Role                                                        |
+| --------- | ----------------- | ----------------------------------------------------------- |
+| Node.js   | 26 (20.9 minimum) | Runtime for Next, the Prisma CLI and the seed script        |
+| npm       | 11                | Package manager, and the only one this repo supports        |
+| tsx       | 4.23              | Runs `prisma/seed.ts` without a separate build step         |
+| dotenv    | 18                | Loads `.env` into `prisma.config.ts` before Prisma reads it |
+
+Next 16 needs Node 20.9 or newer. Vitest 5 is stricter and needs Node 22.12, 24,
+or 26 or newer. **The practical floor is Node 22.12.** This machine runs 26.8.
+
+The repo ships a `package-lock.json`, so `npm install` reproduces the exact tree.
+Do not mix in `pnpm` or `yarn`; you will get a different dependency graph and the
+Turbopack warning described under [Run it](#run-it).
+
+### Framework: Next.js 16.4.3
+
+The App Router, not the Pages Router. Server components read the database
+directly; client components handle the one interactive form.
+
+| Piece                    | Where                                                       |
+| ------------------------ | ----------------------------------------------------------- |
+| App Router routes        | `src/app/**/page.tsx`                                       |
+| Route handlers (the API) | `src/app/api/**/route.ts`                                   |
+| Root layout and metadata | `src/app/layout.tsx`                                        |
+| Turbopack bundler        | `next dev` and `next build`, configured in `next.config.ts` |
+
+Two Next 16 features are switched off in `next.config.ts`, both on purpose:
+`cacheComponents` and `partialPrefetching`. They expect every dynamic route to
+opt in with `use cache`. The lab app is deliberately plain: it reads Prisma on
+every request and caches nothing. A participant should not have to reason about
+a caching layer to understand where state lives.
+
+Turbopack is both the dev server and the production bundler in Next 16, so there
+is no webpack configuration in this repository.
+
+### UI: React 19.3
+
+Server components by default. `DecisionForm.tsx` is the only file with
+`"use client"`, because it is the only one with state and an event handler.
+
+This split is itself a teaching point. Session 3.1's slide on instructions
+versus context has a sibling here: server components are where durable data
+lives, client components are where interaction lives, and mixing them badly is
+how you end up with a fetch in a render.
+
+### Language: TypeScript 5.9, strict
+
+`strict: true` in `tsconfig.json`, plus the `@/*` path alias mapped to `src/*`.
+Every source file is `.ts` or `.tsx`; there is no JavaScript in `src/`.
+
+One honest limit, and it is gap Q3: TypeScript checks nothing at the HTTP
+boundary. A `curl` request bypasses every type you wrote. That is why the
+validation gap is real and why Lab 2B is asked to find it.
+
+### Styling: Tailwind CSS 4
+
+Tailwind 4 is CSS-first. There is **no `tailwind.config.js`** in this repository,
+which surprises people who have used Tailwind 3. Configuration lives in CSS,
+inside `src/app/globals.css`:
+
+```css
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+```
+
+`@import "tailwindcss"` replaces the three `@tailwind` directives from v3.
+`@theme inline` is where design tokens are declared.
+
+The plugin is `@tailwindcss/postcss` (4.3) wired up in `postcss.config.mjs`, so
+Tailwind runs as a PostCSS step rather than as a Turbopack loader. That choice
+keeps the build path conventional and gives you a PostCSS config to point at when
+teaching how CSS reaches the browser. `postcss` 8 is the runner underneath it.
+
+No component library, no CSS-in-JS, no design system. Every class you see is a
+Tailwind utility written by hand, so a participant can read a component and know
+exactly what styles it, which is what you want in a lab about reading code.
+
+### Data: Prisma 7.10 with the better-sqlite3 driver adapter
+
+| Package                          | Role                                          |
+| -------------------------------- | --------------------------------------------- |
+| `prisma`                         | CLI: `db push`, `generate`, `studio`          |
+| `@prisma/client`                 | Generated, typed query client                 |
+| `@prisma/adapter-better-sqlite3` | Prisma 7 driver adapter for SQLite            |
+| `better-sqlite3`                 | The actual SQLite driver, synchronous, native |
+
+Prisma 7 changed two things that matter, and both will trip up anyone following
+an older tutorial:
+
+**The datasource URL is no longer in `schema.prisma`.** It moved to
+`prisma.config.ts`, read through `env("DATABASE_URL")`. A `url = env(...)` line
+in the schema is now a hard validation error.
+
+**The client is constructed with a driver adapter.** `src/lib/db.ts` builds a
+`PrismaBetterSqlite3` adapter and passes it to `new PrismaClient({ adapter })`.
+There is no implicit connection string.
+
+The generated client is written to `src/generated/prisma`, not
+`node_modules/.prisma`, and it is gitignored. `npm run build` regenerates it
+first, so a fresh clone never needs a manual `prisma generate`.
+
+`better-sqlite3` is a native module. If npm skipped its install script you will
+get `Cannot find module 'better-sqlite3'`, and `npm rebuild better-sqlite3`
+fixes it. This is the most common setup failure on a new machine.
+
+### Database: SQLite
+
+One file, `prisma/dev.db`, gitignored and recreated by `npm run db:reset`.
+
+Chosen for the lab, not for production. It means no Docker, no service to start,
+no credentials, and a database that works on a plane. A participant can open it
+with any SQLite browser and see the exact rows the app sees.
+
+The trade-off, stated plainly: SQLite has no concurrent writers, no roles, and no
+row-level security. Every access-control gap in this repo (F2, F7) is more
+dangerous on a real database, and that is worth saying out loud in Lab 2B.
+
+Swapping to Postgres is a two-line change to `schema.prisma` plus a different
+adapter. The domain code does not care.
+
+### Testing: Vitest 5, Testing Library, Stryker 9
+
+| Package                          | Version | Role                                        |
+| -------------------------------- | ------- | ------------------------------------------- |
+| `vitest`                         | 5.0     | Test runner, Vite-native, no separate build |
+| `@vitejs/plugin-react`           | 5.1     | JSX and Fast Refresh inside the test build  |
+| `jsdom`                          | 28.1    | Browser-like DOM for component tests        |
+| `@testing-library/react`         | 16.3    | Render and query components as a user would |
+| `@testing-library/user-event`    | 14.6    | Realistic click and type events             |
+| `@testing-library/jest-dom`      | 6.9     | DOM matchers such as `toBeVisible`          |
+| `@vitest/coverage-v8`            | 5.0     | Coverage via V8, no instrumentation step    |
+| `@stryker-mutator/core`          | 9.6     | Mutation testing engine                     |
+| `@stryker-mutator/vitest-runner` | 9.6     | Stryker plugin that drives Vitest           |
+
+Configuration is `vitest.config.mts`. The `.mts` extension matters, because a
+`.ts` file loaded as CommonJS throws a Vite warning. It sets `jsdom`, the `@`
+alias, and coverage scoped to `src/lib`.
+
+Only `src/lib` is under test, and deliberately thin. Nine tests, all passing, and
+a mutation score of 7.14 percent. That is not neglect: it is gap T3, and Lab 3F
+plus the mutation extension exist because of it.
+
+`stryker.config.json` scopes mutation to `src/lib/leave.ts`. Mutating the whole
+app takes minutes; mutating one domain module takes six seconds, which is what
+you need in a 50-minute lab.
+
+### Quality: ESLint 9 and Prettier 3
+
+| Package              | Version | Role                                                     |
+| -------------------- | ------- | -------------------------------------------------------- |
+| `eslint`             | 9.39    | Flat-config linter                                       |
+| `eslint-config-next` | 16.4    | Next's rules: `core-web-vitals` and `typescript` presets |
+| `prettier`           | 3.9     | Formatter, no linter rules                               |
+| `@types/*`           | n/a     | Type definitions for Node, React, DOM and better-sqlite3 |
+
+`eslint.config.mjs` is **flat config**, the ESLint 9 format. `eslint-config-next`
+16 exports flat config directly, so there is no `FlatCompat` wrapper in this
+repo. An older tutorial will show one; it is no longer needed.
+
+Lint rules come from `next/core-web-vitals` and `next/typescript`. Generated
+Prisma output and build artifacts are ignored, so lint stays fast and never
+reports on code nobody wrote.
+
+Prettier settings live in `.prettierrc`: double quotes, semicolons, 90-character
+lines. `.prettierignore` keeps it away from `src/generated` and lockfiles.
+
+`npm run format` rewrites; `npm run format:check` fails without touching, which
+is the version a CI job should use.
+
+### What is deliberately absent
+
+| Absent                 | Why                                                   |
+| ---------------------- | ----------------------------------------------------- |
+| Authentication library | Gap F7. Adding it is a Sprint 1 story                 |
+| Component library      | Hand-written Tailwind keeps components readable       |
+| State manager          | One client component does not need one                |
+| Fetch wrapper          | `fetch` directly, so error handling gaps stay visible |
+| Validation library     | Gap Q3, the missing runtime boundary                  |
+| CI workflow            | Gap P1, in `.github/workflows/README.md`              |
+| Docker                 | SQLite makes it unnecessary                           |
+
+Each absence is either a gap to find or a complexity the labs do not need.
 
 ## Run it
 
@@ -181,6 +363,6 @@ openspec/         spec of record plus two incomplete change proposals
 GAPS.md           instructor answer key
 ```
 
-## Licence
+## License
 
 MIT. Use it in your own training.
