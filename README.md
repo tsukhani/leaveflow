@@ -33,6 +33,33 @@ npm run dev
 
 Open http://localhost:3000.
 
+That is the whole setup. There is no service to start, no Docker, no database
+server. SQLite lives in `prisma/dev.db`.
+
+### If something goes wrong
+
+**`Cannot find module 'better-sqlite3'`.** The install script that compiles it
+was skipped. Recent npm versions hold back install scripts by default.
+
+```bash
+npm rebuild better-sqlite3
+```
+
+**`prisma: command not found`, or the client fails to generate.** Same cause.
+Run `npm rebuild`, then `npm run db:push` again. If you are behind a corporate
+proxy, `PRISMA_ENGINES_MIRROR` is the escape hatch.
+
+**A Turbopack warning about a lockfile outside the repository.** `next.config.ts`
+pins `turbopack.root` to this directory, so you should not see it. If you do,
+you have an older copy of the config: check that `turbopack.root` is present.
+
+**Dates render differently on two machines.** That is not a bug in your setup. It
+is gap Q5, and Lab 2B is where you write it down.
+
+**The page shows stale numbers after you change the database.** Every page is
+`force-dynamic`, so a refresh is enough. If it persists, stop the server, delete
+`.next`, and start it again.
+
 ## Verify it
 
 ```bash
@@ -54,6 +81,17 @@ npm run test:mutation  # 7.14 percent, 39 survivors. That is the lesson.
 | `/api/requests`            | GET list, POST create                                      |
 | `/api/requests/:id/decide` | POST approve or reject                                     |
 | `/api/balances`            | GET balances                                               |
+
+## A note on AGENTS.md
+
+Next 16 writes an `AGENTS.md` file into the project on first `next dev` when it
+detects an AI coding agent. This repository sets `agentRules: false` in
+`next.config.ts` to suppress it.
+
+The reason is pedagogical. Lab 3A asks you to author `CLAUDE.md` yourself, and a
+scaffolded agent file from the framework would hand you a starting point you were
+meant to derive. If you want to see what Next generates, delete the flag, run
+`npm run dev`, and compare the result with what you wrote.
 
 ## The two shipped change proposals
 

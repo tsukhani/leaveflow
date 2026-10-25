@@ -44,3 +44,8 @@ yarn-error.log*
 # agent tooling, created during the course labs
 .claude/settings.local.json
 CLAUDE.local.md
+
+# Next 16 writes this on first dev run when agentRules is enabled.
+# Suppressed in next.config.ts, but ignored here so a participant who turns
+# it on does not commit a framework-generated file by accident.
+AGENTS.md

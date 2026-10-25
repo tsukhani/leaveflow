@@ -131,6 +131,19 @@ the tests do not make.
 
 ---
 
+## Repository configuration that is not a gap
+
+`next.config.ts` sets two options worth knowing, because both look like
+configuration but exist for teaching reasons.
+
+- `agentRules: false` stops Next 16 writing its own `AGENTS.md` on first run.
+  Lab 3A asks you to author `CLAUDE.md`, and a scaffolded file would pre-empt
+  that work.
+- `turbopack.root` is pinned to the project directory so Turbopack does not walk
+  upward and resolve a lockfile outside the repo.
+
+Neither is a defect to find. Both are deliberate.
+
 ## Intentional non-gaps
 
 Do not "fix" these. They are correct, and confusing them with gaps is a
