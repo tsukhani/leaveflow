@@ -2,6 +2,10 @@
   "name": "leaveflow",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=9"
+  },
   "description": "Leave management for small companies. Course lab repository for Modern Software Engineering with Agentic AI.",
   "scripts": {
     "dev": "next dev",

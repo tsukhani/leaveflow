@@ -14,15 +14,21 @@ pinned in `package.json`; run `npm ls --depth=0` to see what actually installed.
 
 ### Runtime and toolchain
 
-| Component | Version           | Role                                                        |
-| --------- | ----------------- | ----------------------------------------------------------- |
-| Node.js   | 26 (20.9 minimum) | Runtime for Next, the Prisma CLI and the seed script        |
-| npm       | 11                | Package manager, and the only one this repo supports        |
-| tsx       | 4.23              | Runs `prisma/seed.ts` without a separate build step         |
-| dotenv    | 18                | Loads `.env` into `prisma.config.ts` before Prisma reads it |
+| Component | Version        | Role                                                        |
+| --------- | -------------- | ----------------------------------------------------------- |
+| Node.js   | 22.12 or newer | Runtime for Next, the Prisma CLI and the seed script        |
+| npm       | 9 or newer     | Package manager, and the only one this repo supports        |
+| tsx       | 4.23           | Runs `prisma/seed.ts` without a separate build step         |
+| dotenv    | 18             | Loads `.env` into `prisma.config.ts` before Prisma reads it |
 
-Next 16 needs Node 20.9 or newer. Vitest 5 is stricter and needs Node 22.12, 24,
-or 26 or newer. **The practical floor is Node 22.12.** This machine runs 26.8.
+**Node 22.12 or newer is the floor.** Next 16 asks for 20.9, but Vitest 5 is
+stricter and requires 22.12, 24, or 26 and above, so the stricter constraint wins.
+Versions 22.12 through 24 and 26 all work. Node 25 does not, because Vitest does
+not publish it.
+
+**npm 9 or newer.** The lockfile is format version 3, which npm 9 made the
+default. Older npm may rewrite it on install, which changes the dependency tree
+you get.
 
 The repo ships a `package-lock.json`, so `npm install` reproduces the exact tree.
 Do not mix in `pnpm` or `yarn`; you will get a different dependency graph and the
