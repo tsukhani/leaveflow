@@ -1,0 +1,6 @@
+node_modules
+.next
+src/generated
+reports
+coverage
+package-lock.json

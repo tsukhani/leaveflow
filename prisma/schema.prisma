@@ -1,0 +1,77 @@
+// LeaveFlow data model.
+//
+// Deliberate gaps for the course (see GAPS.md):
+//   - No LeaveApproval audit trail: decisions overwrite status, history is lost.
+//   - No unique constraint on (employeeId, startDate): overlapping requests are possible.
+//   - LeaveBalance is denormalised and never reconciled with LeaveRequest history.
+//   - No Department model: approval routing cannot exceed one level.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Employee {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  role         Role     @default(EMPLOYEE)
+  managerId    String?
+  manager      Employee?  @relation("Management", fields: [managerId], references: [id])
+  reports      Employee[] @relation("Management")
+  leaveBalance LeaveBalance?
+  requests     LeaveRequest[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  HR_ADMIN
+}
+
+model LeaveBalance {
+  id          String   @id @default(cuid())
+  employeeId  String   @unique
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  annualTotal Int      @default(14)
+  annualUsed  Int      @default(0)
+  medicalTotal Int     @default(14)
+  medicalUsed Int      @default(0)
+  year        Int
+  updatedAt   DateTime @updatedAt
+}
+
+model LeaveRequest {
+  id          String        @id @default(cuid())
+  employeeId  String
+  employee    Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType   LeaveType     @default(ANNUAL)
+  startDate   DateTime
+  endDate     DateTime
+  days        Int
+  reason      String?
+  status      LeaveStatus   @default(PENDING)
+  decidedById String?
+  decidedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+enum LeaveType {
+  ANNUAL
+  MEDICAL
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}

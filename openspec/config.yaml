@@ -1,0 +1,5 @@
+schema: spec-driven
+project: LeaveFlow
+context: |
+  Leave management for small companies. Next.js App Router, Prisma, SQLite.
+  Single-tenant. Employees submit leave; their manager approves.
